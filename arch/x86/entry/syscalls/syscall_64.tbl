@@ -332,6 +332,7 @@
 323	common	userfaultfd		sys_userfaultfd
 324	common	membarrier		sys_membarrier
 325	common	mlock2			sys_mlock2
+326	common	copy_file_range		sys_copy_file_range
 424	common	pidfd_send_signal	sys_pidfd_send_signal
 434	common	pidfd_open		sys_pidfd_open
 
