@@ -539,7 +539,7 @@ static const struct inode_operations sockfs_inode_ops = {
  *	NULL is returned.
  */
 
-static struct socket *sock_alloc(void)
+struct socket *sock_alloc(void)
 {
 	struct inode *inode;
 	struct socket *sock;
@@ -560,6 +560,7 @@ static struct socket *sock_alloc(void)
 	this_cpu_add(sockets_in_use, 1);
 	return sock;
 }
+EXPORT_SYMBOL(sock_alloc);
 
 /**
  *	sock_release	-	close a socket
