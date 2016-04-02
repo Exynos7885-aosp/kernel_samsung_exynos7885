@@ -1911,9 +1911,9 @@ static int test_ablkcipher(void)
 	}
 
 	req = ablkcipher_request_alloc(ablkcipher, GFP_KERNEL);
-	if (IS_ERR(req)) {
-		pr_info("could not allocate request queue\n");
-		ret = PTR_ERR(req);
+	if (!req) {
+		pr_info("could not allocate ablkcipher request\n");
+		ret = -ENOMEM;
 		goto out;
 	}
 
