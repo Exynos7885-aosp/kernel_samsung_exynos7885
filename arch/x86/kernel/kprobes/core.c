@@ -52,6 +52,7 @@
 #include <linux/kasan.h>
 #include <linux/moduleloader.h>
 
+#include <asm/text-patching.h>
 #include <asm/cacheflush.h>
 #include <asm/desc.h>
 #include <asm/pgtable.h>
