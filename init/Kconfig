@@ -1214,6 +1214,16 @@ config CGROUP_BPF
           BPF_CGROUP_INET_INGRESS will be executed on the ingress path of
           inet sockets.
 
+config CGROUP_RDMA
+        bool "RDMA controller"
+        help
+          Provides enforcement of RDMA resources defined by IB stack.
+          It is fairly easy for consumers to exhaust RDMA resources, which
+          can result into resource unavailability to other consumers.
+          RDMA controller is designed to stop this from happening.
+          Attaching processes with active RDMA resources to the cgroup
+          hierarchy is allowed even if can cross the hierarchy's limit.
+
 config CGROUP_WRITEBACK
 	bool
 	depends on MEMCG && BLK_CGROUP
