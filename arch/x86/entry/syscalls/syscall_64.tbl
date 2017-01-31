@@ -335,6 +335,7 @@
 326	common	copy_file_range		sys_copy_file_range
 327	64	preadv2			sys_preadv2
 328	64	pwritev2		sys_pwritev2
+332	common	statx			sys_statx
 424	common	pidfd_send_signal	sys_pidfd_send_signal
 434	common	pidfd_open		sys_pidfd_open
 

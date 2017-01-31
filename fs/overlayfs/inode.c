@@ -25,7 +25,11 @@ static int ovl_copy_up_truncate(struct dentry *dentry)
 		goto out_dput_parent;
 
 	ovl_path_lower(dentry, &lowerpath);
-	err = vfs_getattr(&lowerpath, &stat);
+	err = vfs_getattr(&lowerpath,
+			  &stat,
+			  STATX_BASIC_STATS,
+                  	  AT_STATX_SYNC_AS_STAT);
+
 	if (err)
 		goto out_dput_parent;
 
@@ -77,13 +81,15 @@ out:
 	return err;
 }
 
-static int ovl_getattr(struct vfsmount *mnt, struct dentry *dentry,
-			 struct kstat *stat)
+static int ovl_getattr(const struct path *path, struct kstat *stat,
+		       u32 request_mask, unsigned int flags)
 {
+	struct dentry *dentry = path->dentry;
 	struct path realpath;
 
 	ovl_path_real(dentry, &realpath);
-	return vfs_getattr(&realpath, stat);
+
+	return vfs_getattr(&realpath, stat, request_mask, flags);
 }
 
 int ovl_permission(struct inode *inode, int mask)

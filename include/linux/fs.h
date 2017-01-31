@@ -1752,7 +1752,7 @@ struct inode_operations {
 			struct inode *, struct dentry *, unsigned int);
 	int (*setattr) (struct dentry *, struct iattr *);
 	int (*setattr2) (struct vfsmount *, struct dentry *, struct iattr *);
-	int (*getattr) (struct vfsmount *mnt, struct dentry *, struct kstat *);
+	int (*getattr) (const struct path *, struct kstat *, u32, unsigned int);
 	int (*setxattr) (struct dentry *, const char *,const void *,size_t,int);
 	ssize_t (*getxattr) (struct dentry *, const char *, void *, size_t);
 	ssize_t (*listxattr) (struct dentry *, char *, size_t);
@@ -2873,8 +2873,8 @@ extern void kfree_put_link(struct inode *, void *);
 extern void free_page_put_link(struct inode *, void *);
 extern int generic_readlink(struct dentry *, char __user *, int);
 extern void generic_fillattr(struct inode *, struct kstat *);
-int vfs_getattr_nosec(struct path *path, struct kstat *stat);
-extern int vfs_getattr(struct path *, struct kstat *);
+extern int vfs_getattr_nosec(const struct path *, struct kstat *, u32, unsigned int);
+extern int vfs_getattr(const struct path *, struct kstat *, u32, unsigned int);
 void __inode_add_bytes(struct inode *inode, loff_t bytes);
 void inode_add_bytes(struct inode *inode, loff_t bytes);
 void __inode_sub_bytes(struct inode *inode, loff_t bytes);
@@ -2886,10 +2886,27 @@ extern const struct inode_operations simple_symlink_inode_operations;
 
 extern int iterate_dir(struct file *, struct dir_context *);
 
-extern int vfs_stat(const char __user *, struct kstat *);
-extern int vfs_lstat(const char __user *, struct kstat *);
-extern int vfs_fstat(unsigned int, struct kstat *);
-extern int vfs_fstatat(int , const char __user *, struct kstat *, int);
+extern int vfs_statx(int, const char __user *, int, struct kstat *, u32);
+extern int vfs_statx_fd(unsigned int, struct kstat *, u32, unsigned int);
+
+static inline int vfs_stat(const char __user *filename, struct kstat *stat)
+{
+	return vfs_statx(AT_FDCWD, filename, 0, stat, STATX_BASIC_STATS);
+}
+static inline int vfs_lstat(const char __user *name, struct kstat *stat)
+{
+	return vfs_statx(AT_FDCWD, name, AT_SYMLINK_NOFOLLOW,
+			 stat, STATX_BASIC_STATS);
+}
+static inline int vfs_fstatat(int dfd, const char __user *filename,
+			      struct kstat *stat, int flags)
+{
+	return vfs_statx(dfd, filename, flags, stat, STATX_BASIC_STATS);
+}
+static inline int vfs_fstat(int fd, struct kstat *stat)
+{
+	return vfs_statx_fd(fd, stat, STATX_BASIC_STATS, 0);
+}
 
 extern int do_vfs_ioctl(struct file *filp, unsigned int fd, unsigned int cmd,
 		    unsigned long arg);
@@ -2917,7 +2934,7 @@ extern int dcache_dir_close(struct inode *, struct file *);
 extern loff_t dcache_dir_lseek(struct file *, loff_t, int);
 extern int dcache_readdir(struct file *, struct dir_context *);
 extern int simple_setattr(struct dentry *, struct iattr *);
-extern int simple_getattr(struct vfsmount *, struct dentry *, struct kstat *);
+extern int simple_getattr(const struct path *, struct kstat *, u32, unsigned int);
 extern int simple_statfs(struct dentry *, struct kstatfs *);
 extern int simple_open(struct inode *inode, struct file *file);
 extern int simple_link(struct dentry *, struct inode *, struct dentry *);

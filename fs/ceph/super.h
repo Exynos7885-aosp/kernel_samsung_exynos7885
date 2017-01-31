@@ -795,8 +795,8 @@ static inline int ceph_do_getattr(struct inode *inode, int mask, bool force)
 extern int ceph_permission(struct inode *inode, int mask);
 extern int __ceph_setattr(struct dentry *dentry, struct iattr *attr);
 extern int ceph_setattr(struct dentry *dentry, struct iattr *attr);
-extern int ceph_getattr(struct vfsmount *mnt, struct dentry *dentry,
-			struct kstat *stat);
+extern int ceph_getattr(const struct path *path, struct kstat *stat,
+			u32 request_mask, unsigned int flags);
 
 /* xattr.c */
 extern int ceph_setxattr(struct dentry *, const char *, const void *,

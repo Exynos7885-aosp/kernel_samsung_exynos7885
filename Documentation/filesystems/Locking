@@ -54,7 +54,8 @@ prototypes:
 	int (*permission) (struct inode *, int, unsigned int);
 	int (*get_acl)(struct inode *, int);
 	int (*setattr) (struct dentry *, struct iattr *);
-	int (*getattr) (struct vfsmount *, struct dentry *, struct kstat *);
+	int (*getattr) (const struct path *, struct dentry *, struct kstat *,
+			u32, unsigned int);
 	int (*setxattr) (struct dentry *, const char *,const void *,size_t,int);
 	ssize_t (*getxattr) (struct dentry *, const char *, void *, size_t);
 	ssize_t (*listxattr) (struct dentry *, char *, size_t);

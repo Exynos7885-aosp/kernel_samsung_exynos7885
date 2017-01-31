@@ -137,16 +137,10 @@ int sysdep_crypto_sha1(uint8_t* hash, struct scatterlist* sg, char *p, int len)
 
 int sysdep_vfs_getattr(struct file *filp, struct kstat *stat)
 {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,0))
 	struct path p;
 
 	p.mnt = filp->f_path.mnt;
 	p.dentry = filp->f_path.dentry;
 
 	return vfs_getattr(&p, stat, STATX_SIZE, KSTAT_QUERY_FLAGS);
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3,9,0))
-	return vfs_getattr(&filp->f_path, stat);
-#else
-	return vfs_getattr(filp->f_path.mnt, filp->f_path.dentry, stat);
-#endif
 }

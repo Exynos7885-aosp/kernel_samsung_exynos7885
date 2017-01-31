@@ -753,30 +753,32 @@ static int sdcardfs_fillattr(struct vfsmount *mnt, struct inode *inode,
 	return 0;
 }
 
-static int sdcardfs_getattr(struct vfsmount *mnt, struct dentry *dentry,
-		 struct kstat *stat)
+static int sdcardfs_getattr(const struct path *path, struct kstat *stat,
+                             u32 request_mask, unsigned int query_flags)
 {
 	struct kstat lower_stat;
 	struct path lower_path;
+	struct vfsmount mnt;
 	struct dentry *parent;
 	int err;
 
-	parent = dget_parent(dentry);
-	if (!check_caller_access_to_name(d_inode(parent), &dentry->d_name)) {
+	parent = dget_parent(path->dentry);
+	if (!check_caller_access_to_name(d_inode(parent), &path->dentry->d_name)) {
 		dput(parent);
 		return -EACCES;
 	}
 	dput(parent);
 
-	sdcardfs_get_lower_path(dentry, &lower_path);
-	err = vfs_getattr(&lower_path, &lower_stat);
+	sdcardfs_get_lower_path(path->dentry, &lower_path);
+	err = vfs_getattr(&lower_path, &lower_stat, STATX_BASIC_STATS,
+                          AT_STATX_SYNC_AS_STAT);
 	if (err)
 		goto out;
-	sdcardfs_copy_and_fix_attrs(d_inode(dentry),
+	sdcardfs_copy_and_fix_attrs(d_inode(path->dentry),
 			      d_inode(lower_path.dentry));
-	err = sdcardfs_fillattr(mnt, d_inode(dentry), &lower_stat, stat);
+	err = sdcardfs_fillattr(&mnt, d_inode(path->dentry), &lower_stat, stat);
 out:
-	sdcardfs_put_lower_path(dentry, &lower_path);
+	sdcardfs_put_lower_path(path->dentry, &lower_path);
 	return err;
 }
 

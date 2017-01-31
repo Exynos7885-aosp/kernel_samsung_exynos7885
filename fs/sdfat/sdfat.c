@@ -161,24 +161,13 @@ static inline void bio_set_dev(struct bio *bio, struct block_device *bdev)
 }
 #endif
 
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 static int sdfat_getattr(const struct path *path, struct kstat *stat,
-			u32 request_mask, unsigned int query_flags)
+			u32 request_mask, unsigned int flags)
 {
 	struct inode *inode = d_backing_inode(path->dentry);
 
 	return __sdfat_getattr(inode, stat);
 }
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0) */
-static int sdfat_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat)
-{
-	struct inode *inode = dentry->d_inode;
-
-	return __sdfat_getattr(inode, stat);
-}
-#endif
-
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 static inline void __sdfat_clean_bdev_aliases(struct block_device *bdev, sector_t block)
