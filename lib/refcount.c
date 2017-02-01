@@ -59,9 +59,9 @@
  */
 bool refcount_add_not_zero(unsigned int i, refcount_t *r)
 {
-	unsigned int old, new, val = atomic_read(&r->refs);
+	unsigned int new, val = atomic_read(&r->refs);
 
-	for (;;) {
+	do {
 		if (!val)
 			return false;
 
@@ -71,12 +71,8 @@ bool refcount_add_not_zero(unsigned int i, refcount_t *r)
 		new = val + i;
 		if (new < val)
 			new = UINT_MAX;
-		old = atomic_cmpxchg_relaxed(&r->refs, val, new);
-		if (old == val)
-			break;
 
-		val = old;
-	}
+	} while (!atomic_try_cmpxchg_relaxed(&r->refs, &val, new));
 
 	WARN_ONCE(new == UINT_MAX, "refcount_t: saturated; leaking memory.\n");
 
@@ -99,9 +95,9 @@ EXPORT_SYMBOL_GPL(refcount_add);
  */
 bool refcount_inc_not_zero(refcount_t *r)
 {
-	unsigned int old, new, val = atomic_read(&r->refs);
+	unsigned int new, val = atomic_read(&r->refs);
 
-	for (;;) {
+	do {
 		new = val + 1;
 
 		if (!val)
@@ -110,12 +106,7 @@ bool refcount_inc_not_zero(refcount_t *r)
 		if (unlikely(!new))
 			return true;
 
-		old = atomic_cmpxchg_relaxed(&r->refs, val, new);
-		if (old == val)
-			break;
-
-		val = old;
-	}
+	} while (!atomic_try_cmpxchg_relaxed(&r->refs, &val, new));
 
 	WARN_ONCE(new == UINT_MAX, "refcount_t: saturated; leaking memory.\n");
 
@@ -163,9 +154,9 @@ EXPORT_SYMBOL_GPL(refcount_inc);
  */
 bool refcount_sub_and_test(unsigned int i, refcount_t *r)
 {
-	unsigned int old, new, val = atomic_read(&r->refs);
+	unsigned int new, val = atomic_read(&r->refs);
 
-	for (;;) {
+	do {
 		if (unlikely(val == UINT_MAX))
 			return false;
 
@@ -175,12 +166,7 @@ bool refcount_sub_and_test(unsigned int i, refcount_t *r)
 			return false;
 		}
 
-		old = atomic_cmpxchg_release(&r->refs, val, new);
-		if (old == val)
-			break;
-
-		val = old;
-	}
+	} while (!atomic_try_cmpxchg_release(&r->refs, &val, new));
 
 	return !new;
 }
@@ -235,7 +221,9 @@ EXPORT_SYMBOL_GPL(refcount_dec);
  */
 bool refcount_dec_if_one(refcount_t *r)
 {
-	return atomic_cmpxchg_release(&r->refs, 1, 0) == 1;
+	int val = 1;
+
+	return atomic_try_cmpxchg_release(&r->refs, &val, 0);
 }
 EXPORT_SYMBOL_GPL(refcount_dec_if_one);
 
@@ -252,9 +240,9 @@ EXPORT_SYMBOL_GPL(refcount_dec_if_one);
  */
 bool refcount_dec_not_one(refcount_t *r)
 {
-	unsigned int old, new, val = atomic_read(&r->refs);
+	unsigned int new, val = atomic_read(&r->refs);
 
-	for (;;) {
+	do {
 		if (unlikely(val == UINT_MAX))
 			return true;
 
@@ -267,12 +255,7 @@ bool refcount_dec_not_one(refcount_t *r)
 			return true;
 		}
 
-		old = atomic_cmpxchg_release(&r->refs, val, new);
-		if (old == val)
-			break;
-
-		val = old;
-	}
+	} while (!atomic_try_cmpxchg_release(&r->refs, &val, new));
 
 	return true;
 }
