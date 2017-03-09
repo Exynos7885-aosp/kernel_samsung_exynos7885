@@ -1287,7 +1287,8 @@ out:
 	return err;
 }
 
-static int vsock_accept(struct socket *sock, struct socket *newsock, int flags)
+static int vsock_accept(struct socket *sock, struct socket *newsock, int flags,
+			bool kern)
 {
 	struct sock *listener;
 	int err;
