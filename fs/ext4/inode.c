@@ -5197,6 +5197,12 @@ int ext4_getattr(const struct path *path, struct kstat *stat,
 	struct inode *inode;
 	unsigned long long delalloc_blocks;
 
+	stat->attributes_mask |= (STATX_ATTR_APPEND |
+				  STATX_ATTR_COMPRESSED |
+				  STATX_ATTR_ENCRYPTED |
+				  STATX_ATTR_IMMUTABLE |
+				  STATX_ATTR_NODUMP);
+
 	inode = d_inode(path->dentry);
 	generic_fillattr(inode, stat);
 
