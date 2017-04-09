@@ -7468,7 +7468,7 @@ static int cpuset_cpu_active(struct notifier_block *nfb, unsigned long action,
 		 */
 
 	case CPU_ONLINE:
-		cpuset_update_active_cpus(true);
+		cpuset_update_active_cpus();
 		break;
 	default:
 		return NOTIFY_DONE;
@@ -7499,7 +7499,7 @@ static int cpuset_cpu_inactive(struct notifier_block *nfb, unsigned long action,
 
 		if (overflow)
 			return notifier_from_errno(-EBUSY);
-		cpuset_update_active_cpus(false);
+		cpuset_update_active_cpus();
 		break;
 	case CPU_DOWN_PREPARE_FROZEN:
 		num_cpus_frozen++;
