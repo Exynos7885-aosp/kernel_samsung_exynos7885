@@ -78,13 +78,13 @@ bool refcount_add_not_zero(unsigned int i, refcount_t *r)
 
 	return true;
 }
-EXPORT_SYMBOL_GPL(refcount_add_not_zero);
+EXPORT_SYMBOL(refcount_add_not_zero);
 
 void refcount_add(unsigned int i, refcount_t *r)
 {
 	WARN_ONCE(!refcount_add_not_zero(i, r), "refcount_t: addition on 0; use-after-free.\n");
 }
-EXPORT_SYMBOL_GPL(refcount_add);
+EXPORT_SYMBOL(refcount_add);
 
 /*
  * Similar to atomic_inc_not_zero(), will saturate at UINT_MAX and WARN.
@@ -112,7 +112,7 @@ bool refcount_inc_not_zero(refcount_t *r)
 
 	return true;
 }
-EXPORT_SYMBOL_GPL(refcount_inc_not_zero);
+EXPORT_SYMBOL(refcount_inc_not_zero);
 
 /**
  * refcount_inc - increment a refcount
@@ -130,7 +130,7 @@ void refcount_inc(refcount_t *r)
 {
 	WARN_ONCE(!refcount_inc_not_zero(r), "refcount_t: increment on 0; use-after-free.\n");
 }
-EXPORT_SYMBOL_GPL(refcount_inc);
+EXPORT_SYMBOL(refcount_inc);
 
 /**
  * refcount_sub_and_test - subtract from a refcount and test if it is 0
@@ -170,7 +170,7 @@ bool refcount_sub_and_test(unsigned int i, refcount_t *r)
 
 	return !new;
 }
-EXPORT_SYMBOL_GPL(refcount_sub_and_test);
+EXPORT_SYMBOL(refcount_sub_and_test);
 
 /**
  * refcount_dec_and_test - decrement a refcount and test if it is 0
@@ -189,7 +189,7 @@ bool refcount_dec_and_test(refcount_t *r)
 {
 	return refcount_sub_and_test(1, r);
 }
-EXPORT_SYMBOL_GPL(refcount_dec_and_test);
+EXPORT_SYMBOL(refcount_dec_and_test);
 
 /*
  * Similar to atomic_dec(), it will WARN on underflow and fail to decrement
@@ -203,7 +203,7 @@ void refcount_dec(refcount_t *r)
 {
 	WARN_ONCE(refcount_dec_and_test(r), "refcount_t: decrement hit 0; leaking memory.\n");
 }
-EXPORT_SYMBOL_GPL(refcount_dec);
+EXPORT_SYMBOL(refcount_dec);
 #endif /* CONFIG_REFCOUNT_FULL */
 
 /*
@@ -225,7 +225,7 @@ bool refcount_dec_if_one(refcount_t *r)
 
 	return atomic_try_cmpxchg_release(&r->refs, &val, 0);
 }
-EXPORT_SYMBOL_GPL(refcount_dec_if_one);
+EXPORT_SYMBOL(refcount_dec_if_one);
 
 /**
  * refcount_dec_not_one - decrement a refcount if it is not 1
@@ -259,7 +259,7 @@ bool refcount_dec_not_one(refcount_t *r)
 
 	return true;
 }
-EXPORT_SYMBOL_GPL(refcount_dec_not_one);
+EXPORT_SYMBOL(refcount_dec_not_one);
 
 /**
  * refcount_dec_and_mutex_lock - return holding mutex if able to decrement
@@ -290,7 +290,7 @@ bool refcount_dec_and_mutex_lock(refcount_t *r, struct mutex *lock)
 
 	return true;
 }
-EXPORT_SYMBOL_GPL(refcount_dec_and_mutex_lock);
+EXPORT_SYMBOL(refcount_dec_and_mutex_lock);
 
 /**
  * refcount_dec_and_lock - return holding spinlock if able to decrement
@@ -321,5 +321,5 @@ bool refcount_dec_and_lock(refcount_t *r, spinlock_t *lock)
 
 	return true;
 }
-EXPORT_SYMBOL_GPL(refcount_dec_and_lock);
+EXPORT_SYMBOL(refcount_dec_and_lock);
 
