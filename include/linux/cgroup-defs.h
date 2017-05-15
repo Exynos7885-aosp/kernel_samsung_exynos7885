@@ -167,6 +167,14 @@ struct css_set {
 	refcount_t refcount;
 
 	/*
+	 * For a domain cgroup, the following points to self.  If threaded,
+	 * to the matching cset of the nearest domain ancestor.  The
+	 * dom_cset provides access to the domain cgroup and its csses to
+	 * which domain level resource consumptions should be charged.
+	 */
+	struct css_set *dom_cset;
+
+	/*
 	 * List running through all cgroup groups in the same hash
 	 * slot. Protected by css_set_lock
 	 */
@@ -184,6 +192,10 @@ struct css_set {
 	 */
 	struct list_head tasks;
 	struct list_head mg_tasks;
+
+	/* all threaded csets whose ->dom_cset points to this cset */
+	struct list_head threaded_csets;
+	struct list_head threaded_csets_node;
 
 	/*
 	 * List of cgrp_cset_links pointing at cgroups referenced from this
@@ -268,12 +280,16 @@ struct cgroup {
 	 * doesn't have any tasks.
 	 *
 	 * All children which have non-zero nr_populated_csets and/or
-	 * nr_populated_children of their own contribute one to
-	 * nr_populated_children.  The counter is zero iff this cgroup's
-	 * subtree proper doesn't have any tasks.
+	 * nr_populated_children of their own contribute one to either
+	 * nr_populated_domain_children or nr_populated_threaded_children
+	 * depending on their type.  Each counter is zero iff all cgroups
+	 * of the type in the subtree proper don't have any tasks.
 	 */
 	int nr_populated_csets;
-	int nr_populated_children;
+	int nr_populated_domain_children;
+	int nr_populated_threaded_children;
+
+	int nr_threaded_children;	/* # of live threaded child cgroups */
 
 	struct kernfs_node *kn;		/* cgroup kernfs entry */
 	struct cgroup_file procs_file;	/* handle for "cgroup.procs" */
@@ -310,6 +326,15 @@ struct cgroup {
 	 * for the given subsystem.
 	 */
 	struct list_head e_csets[CGROUP_SUBSYS_COUNT];
+
+	/*
+	 * If !threaded, self.  If threaded, it points to the nearest
+	 * domain ancestor.  Inside a threaded subtree, cgroups are exempt
+	 * from process granularity and no-internal-task constraint.
+	 * Domain level resource consumptions which aren't tied to a
+	 * specific task are charged to the dom_cgrp.
+	 */
+	struct cgroup *dom_cgrp;
 
 	/*
 	 * list of pidlists, up to two for each namespace (one for procs, one
