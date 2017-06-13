@@ -163,6 +163,9 @@ struct css_set {
 	 */
 	struct hlist_node hlist;
 
+	/* internal task count, protected by css_set_lock */
+	int nr_tasks;
+
 	/*
 	 * Lists running through all tasks using this cgroup group.
 	 * mg_tasks lists tasks which belong to this cset but are in the
