@@ -472,6 +472,7 @@
 		*(.text .text.fixup)					\
 		*(.text.unlikely .text.unlikely.*)			\
 		*(.text.unknown .text.unknown.*)			\
+		*(.text..ftrace)					\
 		*(.ref.text)						\
 		*(.text.asan.* .text.tsan.*)				\
 	MEM_KEEP(init.text)						\
