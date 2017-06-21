@@ -37,6 +37,8 @@
 #include <linux/refcount.h>
 #include <linux/bug.h>
 
+#ifdef CONFIG_REFCOUNT_FULL
+
 /**
  * refcount_add_not_zero - add a value to a refcount unless it is 0
  * @i: the value to add to the refcount
@@ -216,6 +218,7 @@ void refcount_dec(refcount_t *r)
 	WARN(refcount_dec_and_test(r), "refcount_t: decrement hit 0; leaking memory.\n");
 }
 EXPORT_SYMBOL_GPL(refcount_dec);
+#endif /* CONFIG_REFCOUNT_FULL */
 
 /*
  * No atomic_t counterpart, it attempts a 1 -> 0 transition and returns the
