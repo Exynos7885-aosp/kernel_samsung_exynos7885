@@ -203,7 +203,7 @@ ATOMIC_OP(xor)
 #undef ATOMIC_OP
 
 /**
- * __atomic_add_unless - add unless the number is already a given value
+ * arch_atomic_fetch_add_unless - add unless the number is already a given value
  * @v: pointer of type atomic_t
  * @a: the amount to add to v...
  * @u: ...unless v is equal to u.
@@ -211,7 +211,7 @@ ATOMIC_OP(xor)
  * Atomically adds @a to @v, so long as @v was not already @u.
  * Returns the old value of @v.
  */
-static __always_inline int __atomic_add_unless(atomic_t *v, int a, int u)
+static __always_inline int arch_atomic_fetch_add_unless(atomic_t *v, int a, int u)
 {
 	int c, old;
 	c = atomic_read(v);
