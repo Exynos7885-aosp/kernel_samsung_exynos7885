@@ -1016,7 +1016,6 @@ static int __ref kernel_init(void *unused)
 #endif
 	/* need to finish all async __init code before freeing the memory */
 	async_synchronize_full();
-	jump_label_invalidate_initmem();
 	free_initmem();
 	mark_readonly();
 	system_state = SYSTEM_RUNNING;
