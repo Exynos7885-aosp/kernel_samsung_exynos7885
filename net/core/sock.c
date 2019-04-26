@@ -135,6 +135,7 @@
 
 #include <linux/filter.h>
 #include <net/sock_reuseport.h>
+#include <net/bpf_sk_storage.h>
 
 #include <trace/events/sock.h>
 
@@ -1530,6 +1531,10 @@ void sk_destruct(struct sock *sk)
 		reuseport_detach_sock(sk);
 
 	sock_disable_timestamp(sk, SK_FLAGS_TIMESTAMP);
+
+#ifdef CONFIG_BPF_SYSCALL
+	bpf_sk_storage_free(sk);
+#endif
 
 	if (atomic_read(&sk->sk_omem_alloc))
 		pr_debug("%s: optmem leakage (%d bytes) detected\n",
