@@ -197,6 +197,7 @@ struct css_set {
 	 */
 	struct list_head tasks;
 	struct list_head mg_tasks;
+	struct list_head dying_tasks;
 
 	/* all threaded csets whose ->dom_cset points to this cset */
 	struct list_head threaded_csets;
