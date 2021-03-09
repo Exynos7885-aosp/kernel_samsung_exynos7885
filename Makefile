@@ -634,15 +634,15 @@ KBUILD_CFLAGS	+= -mcpu=cortex-a53
 endif
 ifneq ($(CROSS_COMPILE),)
 CLANG_TARGET	:= --target=$(notdir $(CROSS_COMPILE:%-=%))
+endif
+ifneq ($(LLVM_IAS),1)
+KBUILD_CFLAGS += $(call cc-option, -no-integrated-as)
+KBUILD_AFLAGS += $(call cc-option, -no-integrated-as)
 GCC_TOOLCHAIN_DIR := $(dir $(shell which $(CROSS_COMPILE)elfedit))
 CLANG_PREFIX	:= --prefix=$(GCC_TOOLCHAIN_DIR)$(notdir $(CROSS_COMPILE))
 endif
 KBUILD_CFLAGS += $(CLANG_TARGET) $(CLANG_PREFIX)
 KBUILD_AFLAGS += $(CLANG_TARGET) $(CLANG_PREFIX)
-ifneq ($(LLVM_IAS),1)
-KBUILD_CFLAGS += $(call cc-option, -no-integrated-as)
-KBUILD_AFLAGS += $(call cc-option, -no-integrated-as)
-endif
 endif
 
 # The arch Makefile can set ARCH_{CPP,A,C}FLAGS to override the default
