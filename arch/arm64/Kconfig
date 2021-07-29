@@ -1232,6 +1232,13 @@ config FPSIMD_CORRUPTION_DETECT
 	help
 	  If FPSIMD has corruption, use this feature for detect problem.
 
+config EUREKA_CUSTOM_DT_NODES
+	bool "Enable Eureka custom DT nodes"
+	depends on SOC_EXYNOS7885
+	default n
+	help
+	  This option provides some custom DT nodes to be used with dtb.
+
 config EXYNOS7885_USE_DEVICE_TREE_OVERLAY
 	bool
 
