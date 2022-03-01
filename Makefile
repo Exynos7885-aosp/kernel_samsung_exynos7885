@@ -630,7 +630,7 @@ all: vmlinux
 
 ifeq ($(cc-name),clang)
 ifeq ($(CONFIG_SOC_EXYNOS7885), y)
-KBUILD_CFLAGS	+= -mcpu=cortex-a53
+KBUILD_CFLAGS	+= -mcpu=cortex-a53 -mtune=cortex-a53
 endif
 # Individual arch/{arch}/Makefiles should use -EL/-EB to set intended
 # endianness and -m32/-m64 to set word size based on Kconfigs instead of
