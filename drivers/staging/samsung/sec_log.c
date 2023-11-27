@@ -31,11 +31,11 @@
  */
 #define LOG_MAGIC 0x4d474f4c	/* "LOGM" */
 
+#ifdef CONFIG_SEC_DEBUG_TSP_LOG
 static int sec_tsp_command_history_index;
 static char *sec_tsp_command_history_buf;
 static unsigned int sec_tsp_command_history_size;
 
-#ifdef CONFIG_SEC_DEBUG_TSP_LOG
 static unsigned *sec_tsp_log_ptr;
 static char *sec_tsp_log_buf;
 static unsigned sec_tsp_log_size;

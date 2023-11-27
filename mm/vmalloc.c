@@ -1223,6 +1223,7 @@ static bool __purge_vmap_area_lazy(unsigned long *start, unsigned long *end,
 		spin_unlock(&vmap_area_lock);
 	}
 	spin_unlock(&purge_lock);
+	return 1;
 }
 
 /*
@@ -1679,10 +1680,11 @@ void vm_unmap_ram(const void *mem, unsigned int count)
 	BUG_ON(addr > VMALLOC_END);
 	BUG_ON(addr & (PAGE_SIZE-1));
 
-	if (likely(count <= VMAP_MAX_ALLOC))
+	if (likely(count <= VMAP_MAX_ALLOC)) {
 		debug_check_no_locks_freed(mem, size);
 		vb_free(mem, size);
 		return;
+	}
 
 	free_unmap_vmap_area_addr(addr);
 	debug_check_no_locks_freed((void *)va->va_start,

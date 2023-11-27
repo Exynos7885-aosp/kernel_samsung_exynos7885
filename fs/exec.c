@@ -1541,7 +1541,7 @@ static int do_execveat_common(int fd, struct filename *filename,
 			      struct user_arg_ptr envp,
 			      int flags)
 {
-	char *pathbuf = NULL;
+	char *pathbuf;
 	struct linux_binprm *bprm;
 	struct file *file;
 	struct files_struct *displaced;
@@ -1549,6 +1549,8 @@ static int do_execveat_common(int fd, struct filename *filename,
 
 	if (IS_ERR(filename))
 		return PTR_ERR(filename);
+
+	pathbuf = NULL;
 
 	/*
 	 * We move the actual failure in case of RLIMIT_NPROC excess from
