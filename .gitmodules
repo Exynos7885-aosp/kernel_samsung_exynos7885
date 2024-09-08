@@ -1,0 +1,4 @@
+[submodule "AnyKernel3"]
+	path = AnyKernel3
+	url = https://github.com/Roynas-Android-Playground/kernel_packaging_anykernel3
+	branch = for-exynos7885-unversioned
