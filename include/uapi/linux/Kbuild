@@ -463,3 +463,6 @@ header-y += xilinx-v4l2-controls.h
 header-y += zorro.h
 header-y += zorro_ids.h
 header-y += userfaultfd.h
+
+header-y += videodev2_exynos_camera.h
+header-y += videodev2_exynos_media.h
