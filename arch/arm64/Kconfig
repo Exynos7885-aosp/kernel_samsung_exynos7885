@@ -1232,11 +1232,62 @@ config FPSIMD_CORRUPTION_DETECT
 	help
 	  If FPSIMD has corruption, use this feature for detect problem.
 
+config EXYNOS7885_USE_DEVICE_TREE_OVERLAY
+	bool
+
+config EXYNOS7884B_A10_EUR_OPEN
+	bool "Galaxy A10"
+        default n
+	select EXYNOS7885_USE_DEVICE_TREE_OVERLAY
+        help
+	  Galaxy A10 DTS
+
+config EXYNOS7884B_A20_SWA_OPEN
+	bool "Galaxy A20"
+        default n
+	select EXYNOS7885_USE_DEVICE_TREE_OVERLAY
+        help
+	  Galaxy A20 DTS
+
+config EXYNOS7884B_A20E_EUR_OPEN
+	bool "Galaxy A20e"
+        default n
+	select EXYNOS7885_USE_DEVICE_TREE_OVERLAY
+        help
+	  Galaxy A20e DTS
+
+config EXYNOS7904_A30_SWA_OPEN
+	bool "Galaxy A30"
+        default n
+	select EXYNOS7885_USE_DEVICE_TREE_OVERLAY
+        help
+	  Galaxy A30 DTS
+
+config EXYNOS7904_A30S_EUR_OPEN
+	bool "Galaxy A30s"
+        default n
+	select EXYNOS7885_USE_DEVICE_TREE_OVERLAY
+        help
+	  Galaxy A30s DTS
+
 config EXYNOS7904_A40_EUR_OPEN
 	bool "Galaxy A40"
         default n
+	select EXYNOS7885_USE_DEVICE_TREE_OVERLAY
         help
 	  Galaxy A40 DTS
+
+config EXYNOS7885_JACKPOTLTE_EUR_OPEN
+	bool "Galaxy A8 (2018)"
+        default n
+        help
+	  Galaxy A8 2018 DTS
+
+config EXYNOS7885_JACKPOT2LTE_EUR_OPEN
+	bool "Galaxy A8+ (2018)"
+        default n
+        help
+	  Galaxy A8+ 2018 DTS
 
 config EXYNOS7904_M20LTE_SWA_OPEN
 	bool "Galaxy M20"
