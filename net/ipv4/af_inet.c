@@ -387,23 +387,21 @@ lookup_protocol:
 		/* Add to protocol hash chains. */
 		err = sk->sk_prot->hash(sk);
 		if (err) {
-			sk_common_release(sk);
-			goto out;
+			goto out_sk_release;
 		}
 	}
 
 	if (sk->sk_prot->init) {
 		err = sk->sk_prot->init(sk);
 		if (err) {
-+			goto out_sk_release;
+			goto out_sk_release;
 		}
 	}
 
 	if (!kern) {
 		err = BPF_CGROUP_RUN_PROG_INET_SOCK(sk);
 		if (err) {
-			sk_common_release(sk);
-			goto out;
+			goto out_sk_release;
 		}
 	}
 out:
