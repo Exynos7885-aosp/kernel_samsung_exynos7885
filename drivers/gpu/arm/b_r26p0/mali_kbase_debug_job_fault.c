@@ -565,4 +565,16 @@ void kbase_debug_job_fault_dev_term(struct kbase_device *kbdev)
 {
 }
 
+int kbase_debug_job_fault_context_init(struct kbase_context *kctx)
+{
+	return 0;
+}
+
+void kbase_debug_job_fault_context_term(struct kbase_context *kctx)
+{
+}
+
+void kbase_debug_job_fault_kctx_unblock(struct kbase_context *kctx)
+{
+}
 #endif /* CONFIG_DEBUG_FS */
