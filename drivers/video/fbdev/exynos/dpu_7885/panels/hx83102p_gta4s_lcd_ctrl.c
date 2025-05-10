@@ -35,7 +35,7 @@
 #define DSI_WRITE(cmd, size)		do {				\
 	ret = dsim_write_hl_data(lcd, cmd, size);			\
 	if (ret < 0)							\
-		dev_info(&lcd->ld->dev, "%s: failed to write %s\n", __func__, #cmd);	\
+		dev_dbg(&lcd->ld->dev, "%s: failed to write %s\n", __func__, #cmd);	\
 } while (0)
 
 struct lcd_info {
@@ -85,7 +85,7 @@ try_write:
 		if (--retry)
 			goto try_write;
 		else
-			dev_info(&lcd->ld->dev, "%s: fail. %02x, ret: %d\n", __func__, cmd[0], ret);
+			dev_dbg(&lcd->ld->dev, "%s: fail. %02x, ret: %d\n", __func__, cmd[0], ret);
 	}
 
 	return ret;
@@ -102,13 +102,13 @@ static int dsim_read_hl_data(struct lcd_info *lcd, u8 addr, u32 size, u8 *buf)
 
 try_read:
 	rx_size = dsim_read_data(lcd->dsim, MIPI_DSI_DCS_READ, (u32)addr, size, buf);
-	dev_info(&lcd->ld->dev, "%s: %2d(%2d), %02x, %*ph%s\n", __func__, size, rx_size, addr,
+	dev_dbg(&lcd->ld->dev, "%s: %2d(%2d), %02x, %*ph%s\n", __func__, size, rx_size, addr,
 		min_t(u32, min_t(u32, size, rx_size), 5), buf, (rx_size > 5) ? "..." : "");
 	if (rx_size != size) {
 		if (--retry)
 			goto try_read;
 		else {
-			dev_info(&lcd->ld->dev, "%s: fail. %02x, %d(%d)\n", __func__, addr, size, rx_size);
+			dev_dbg(&lcd->ld->dev, "%s: fail. %02x, %d(%d)\n", __func__, addr, size, rx_size);
 			ret = -EPERM;
 		}
 	}
@@ -127,7 +127,7 @@ static int dsim_panel_set_brightness(struct lcd_info *lcd, int force)
 	lcd->brightness = lcd->bd->props.brightness;
 
 	if (!force && lcd->state != PANEL_STATE_RESUMED) {
-		dev_info(&lcd->ld->dev, "%s: panel is not active state\n", __func__);
+		dev_dbg(&lcd->ld->dev, "%s: panel is not active state\n", __func__);
 		goto exit;
 	}
 
@@ -137,7 +137,7 @@ static int dsim_panel_set_brightness(struct lcd_info *lcd, int force)
 
 	DSI_WRITE(bl_reg, ARRAY_SIZE(bl_reg));
 
-	dev_info(&lcd->ld->dev, "%s: brightness: %3d, %4d(%2x %2x), lx: %d\n", __func__,
+	dev_dbg(&lcd->ld->dev, "%s: brightness: %3d, %4d(%2x %2x), lx: %d\n", __func__,
 		lcd->brightness, brightness_table[lcd->brightness], bl_reg[1], bl_reg[2], lcd->lux);
 
 	if (lcd->brightness < 70 && lcd->cabc_check) {
@@ -172,7 +172,7 @@ static int panel_set_brightness(struct backlight_device *bd)
 	if (lcd->state == PANEL_STATE_RESUMED) {
 		ret = dsim_panel_set_brightness(lcd, 0);
 		if (ret < 0)
-			dev_info(&lcd->ld->dev, "%s: failed to set brightness\n", __func__);
+			dev_dbg(&lcd->ld->dev, "%s: failed to set brightness\n", __func__);
 	}
 
 	return ret;
@@ -193,7 +193,7 @@ static int hx83102p_read_init_info(struct lcd_info *lcd)
 	lcd->id_info.id[1] = (lcdtype & 0x00FF00) >> 8;
 	lcd->id_info.id[2] = (lcdtype & 0x0000FF) >> 0;
 
-	dev_info(&lcd->ld->dev, "%s: %x\n", __func__, cpu_to_be32(lcd->id_info.value));
+	dev_dbg(&lcd->ld->dev, "%s: %x\n", __func__, cpu_to_be32(lcd->id_info.value));
 
 	return 0;
 }
@@ -219,13 +219,13 @@ static int hx83102p_read_id(struct lcd_info *lcd)
 
 	if (ret < 0 || !lcd->id_info.value) {
 		priv->lcdconnected = lcd->connected = 0;
-		dev_info(&lcd->ld->dev, "%s: connected lcd is invalid\n", __func__);
+		dev_dbg(&lcd->ld->dev, "%s: connected lcd is invalid\n", __func__);
 
 		if (lcdtype && decon)
 			decon_abd_save_bit(&decon->abd, BITS_PER_BYTE * HX83102P_ID_LEN, cpu_to_be32(lcd->id_info.value), LDI_BIT_DESC_ID);
 	}
 
-	dev_info(&lcd->ld->dev, "%s: %x\n", __func__, cpu_to_be32(lcd->id_info.value));
+	dev_dbg(&lcd->ld->dev, "%s: %x\n", __func__, cpu_to_be32(lcd->id_info.value));
 
 	return ret;
 }
@@ -235,7 +235,7 @@ static int hx83102p_displayon_late(struct lcd_info *lcd)
 {
 	int ret = 0;
 
-	dev_info(&lcd->ld->dev, "%s\n", __func__);
+	dev_dbg(&lcd->ld->dev, "%s\n", __func__);
 
 	DSI_WRITE(SEQ_SET_B9_PW, ARRAY_SIZE(SEQ_SET_B9_PW));
 	DSI_WRITE(SEQ_DISPLAY_ON, ARRAY_SIZE(SEQ_DISPLAY_ON));
@@ -249,7 +249,7 @@ static int hx83102p_exit(struct lcd_info *lcd)
 {
 	int ret = 0;
 
-	dev_info(&lcd->ld->dev, "%s\n", __func__);
+	dev_dbg(&lcd->ld->dev, "%s\n", __func__);
 
 	DSI_WRITE(SEQ_SET_B9_PW, ARRAY_SIZE(SEQ_SET_B9_PW));
 	DSI_WRITE(SEQ_SET_E9_VSOM_SOFT1, ARRAY_SIZE(SEQ_SET_E9_VSOM_SOFT1));
@@ -268,7 +268,7 @@ static int hx83102p_init(struct lcd_info *lcd)
 {
 	int ret = 0;
 
-	dev_info(&lcd->ld->dev, "%s: ++\n", __func__);
+	dev_dbg(&lcd->ld->dev, "%s: ++\n", __func__);
 	lcd->cabc_check = 1;
 #if defined(CONFIG_SEC_FACTORY)
 	hx83102p_read_id(lcd);
@@ -328,7 +328,7 @@ static int hx83102p_init(struct lcd_info *lcd)
 	DSI_WRITE(SEQ_SLEEP_OUT, ARRAY_SIZE(SEQ_SLEEP_OUT));
 	DSI_WRITE(SEQ_SET_B9_CLOSE_PW, ARRAY_SIZE(SEQ_SET_B9_CLOSE_PW));
 	msleep(130);	/* > 120ms */
-	dev_info(&lcd->ld->dev, "%s: --\n", __func__);
+	dev_dbg(&lcd->ld->dev, "%s: --\n", __func__);
 
 	return ret;
 }
@@ -338,7 +338,7 @@ static int hx83102p_power_disable(struct lcd_info *lcd)
 	int ret = 0;
 	struct dsim_device *dsim = get_dsim_drvdata(0);
 
-	dev_info(&lcd->ld->dev, "%s\n", __func__);
+	dev_dbg(&lcd->ld->dev, "%s\n", __func__);
 	run_list(dsim->dev, "dsim_set_panel_power_disable_notaot");
 
 	return ret;
@@ -364,7 +364,7 @@ static int fb_notifier_callback(struct notifier_block *self,
 
 	fb_blank = *(int *)evdata->data;
 
-	dev_info(&lcd->ld->dev, "%s: %d\n", __func__, fb_blank);
+	dev_dbg(&lcd->ld->dev, "%s: %d\n", __func__, fb_blank);
 
 	if (evdata->info->node)
 		return NOTIFY_DONE;
@@ -391,7 +391,7 @@ static int hx83102p_probe(struct lcd_info *lcd)
 {
 	int ret = 0;
 
-	dev_info(&lcd->ld->dev, "+ %s\n", __func__);
+	dev_dbg(&lcd->ld->dev, "+ %s\n", __func__);
 
 	lcd->bd->props.max_brightness = EXTEND_BRIGHTNESS;
 	lcd->bd->props.brightness = UI_DEFAULT_BRIGHTNESS;
@@ -401,12 +401,12 @@ static int hx83102p_probe(struct lcd_info *lcd)
 
 	ret = hx83102p_read_init_info(lcd);
 	if (ret < 0)
-		dev_info(&lcd->ld->dev, "%s: failed to init information\n", __func__);
+		dev_dbg(&lcd->ld->dev, "%s: failed to init information\n", __func__);
 
 	lcd->fb_notif_panel.notifier_call = fb_notifier_callback;
 	decon_register_notifier(&lcd->fb_notif_panel);
 
-	dev_info(&lcd->ld->dev, "- %s\n", __func__);
+	dev_dbg(&lcd->ld->dev, "- %s\n", __func__);
 
 	return 0;
 }
@@ -501,7 +501,7 @@ static ssize_t cabc_store(struct device *dev,
 
 	mutex_unlock(&lcd->lock);
 
-	dev_info(&lcd->ld->dev, "%s: %d\n", __func__, value);
+	dev_dbg(&lcd->ld->dev, "%s: %d\n", __func__, value);
 
 	return size;
 }
@@ -531,7 +531,7 @@ static void lcd_init_sysfs(struct lcd_info *lcd)
 
 	ret = sysfs_create_group(&lcd->ld->dev.kobj, &lcd_sysfs_attr_group);
 	if (ret < 0)
-		dev_info(&lcd->ld->dev, "failed to add lcd sysfs\n");
+		dev_dbg(&lcd->ld->dev, "failed to add lcd sysfs\n");
 
 	init_debugfs_backlight(lcd->bd, brightness_table, NULL);
 }
@@ -598,10 +598,10 @@ static int dsim_panel_probe(struct dsim_device *dsim)
 	lcd->dsim = dsim;
 	ret = hx83102p_probe(lcd);
 	if (ret < 0)
-		dev_info(&lcd->ld->dev, "%s: failed to probe panel\n", __func__);
+		dev_dbg(&lcd->ld->dev, "%s: failed to probe panel\n", __func__);
 
 	lcd_init_sysfs(lcd);
-	dev_info(&lcd->ld->dev, "%s: %s: done\n", kbasename(__FILE__), __func__);
+	dev_dbg(&lcd->ld->dev, "%s: %s: done\n", kbasename(__FILE__), __func__);
 probe_err:
 	return ret;
 }
@@ -610,7 +610,7 @@ static int dsim_panel_displayon(struct dsim_device *dsim)
 {
 	struct lcd_info *lcd = dsim->priv.par;
 
-	dev_info(&lcd->ld->dev, "+ %s: %d\n", __func__, lcd->state);
+	dev_dbg(&lcd->ld->dev, "+ %s: %d\n", __func__, lcd->state);
 
 	if (lcd->state == PANEL_STATE_SUSPENED)
 		hx83102p_init(lcd);
@@ -619,7 +619,7 @@ static int dsim_panel_displayon(struct dsim_device *dsim)
 	lcd->state = PANEL_STATE_RESUMED;
 	mutex_unlock(&lcd->lock);
 
-	dev_info(&lcd->ld->dev, "- %s: %d, %d\n", __func__, lcd->state, lcd->connected);
+	dev_dbg(&lcd->ld->dev, "- %s: %d, %d\n", __func__, lcd->state, lcd->connected);
 
 	return 0;
 }
@@ -628,7 +628,7 @@ static int dsim_panel_suspend(struct dsim_device *dsim)
 {
 	struct lcd_info *lcd = dsim->priv.par;
 
-	dev_info(&lcd->ld->dev, "+ %s: %d\n", __func__, lcd->state);
+	dev_dbg(&lcd->ld->dev, "+ %s: %d\n", __func__, lcd->state);
 
 	if (lcd->state == PANEL_STATE_SUSPENED)
 		goto exit;
@@ -643,7 +643,7 @@ static int dsim_panel_suspend(struct dsim_device *dsim)
 	lcd->state = PANEL_STATE_SUSPENED;
 	mutex_unlock(&lcd->lock);
 
-	dev_info(&lcd->ld->dev, "- %s: %d, %d\n", __func__, lcd->state, lcd->connected);
+	dev_dbg(&lcd->ld->dev, "- %s: %d, %d\n", __func__, lcd->state, lcd->connected);
 
 exit:
 	return 0;
@@ -669,14 +669,14 @@ static void panel_conn_uevent(struct lcd_info *lcd)
 
 	kobject_uevent_env(&lcd->ld->dev.kobj, KOBJ_CHANGE, uevent_conn_str);
 
-	dev_info(&lcd->ld->dev, "%s: %s, %s\n", __func__, uevent_conn_str[0], uevent_conn_str[1]);
+	dev_dbg(&lcd->ld->dev, "%s: %s, %s\n", __func__, uevent_conn_str[0], uevent_conn_str[1]);
 }
 
 static void panel_conn_work(struct work_struct *work)
 {
 	struct lcd_info *lcd = container_of(work, struct lcd_info, conn_work);
 
-	dev_info(&lcd->ld->dev, "%s\n", __func__);
+	dev_dbg(&lcd->ld->dev, "%s\n", __func__);
 
 	panel_conn_uevent(lcd);
 }
@@ -685,7 +685,7 @@ static irqreturn_t panel_conn_det_handler(int irq, void *dev_id)
 {
 	struct lcd_info *lcd = (struct lcd_info *)dev_id;
 
-	dev_info(&lcd->ld->dev, "%s\n", __func__);
+	dev_dbg(&lcd->ld->dev, "%s\n", __func__);
 
 	queue_work(lcd->conn_workqueue, &lcd->conn_work);
 
@@ -705,7 +705,7 @@ static ssize_t conn_det_show(struct device *dev,
 	else
 		sprintf(buf, "%s\n", gpio_active ? "disconnected" : "connected");
 
-	dev_info(&lcd->ld->dev, "%s: %s\n", __func__, buf);
+	dev_dbg(&lcd->ld->dev, "%s: %s\n", __func__, buf);
 
 	return strlen(buf);
 }
@@ -726,13 +726,13 @@ static ssize_t conn_det_store(struct device *dev,
 		return -EINVAL;
 
 	if (lcd->conn_det_enable != value) {
-		dev_info(&lcd->ld->dev, "%s: %u, %u\n", __func__, lcd->conn_det_enable, value);
+		dev_dbg(&lcd->ld->dev, "%s: %u, %u\n", __func__, lcd->conn_det_enable, value);
 
 		mutex_lock(&lcd->lock);
 		lcd->conn_det_enable = value;
 		mutex_unlock(&lcd->lock);
 
-		dev_info(&lcd->ld->dev, "%s: %s\n", __func__, gpio_active ? "disconnected" : "connected");
+		dev_dbg(&lcd->ld->dev, "%s: %s\n", __func__, gpio_active ? "disconnected" : "connected");
 		if (lcd->conn_det_enable && gpio_active)
 			panel_conn_uevent(lcd);
 	}
@@ -749,24 +749,24 @@ static void panel_conn_register(struct lcd_info *lcd)
 	int gpio = 0, gpio_active = 0;
 
 	if (!decon) {
-		dev_info(&lcd->ld->dev, "%s: decon is invalid\n", __func__);
+		dev_dbg(&lcd->ld->dev, "%s: decon is invalid\n", __func__);
 		return;
 	}
 
 	if (!lcd->connected) {
-		dev_info(&lcd->ld->dev, "%s: lcd connected: %d\n", __func__, lcd->connected);
+		dev_dbg(&lcd->ld->dev, "%s: lcd connected: %d\n", __func__, lcd->connected);
 		return;
 	}
 
 	gpio = of_get_gpio_with_name("gpio_con");
 	if (gpio < 0) {
-		dev_info(&lcd->ld->dev, "%s: gpio_con is %d\n", __func__, gpio);
+		dev_dbg(&lcd->ld->dev, "%s: gpio_con is %d\n", __func__, gpio);
 		return;
 	}
 
 	gpio_active = of_gpio_get_active("gpio_con");
 	if (gpio_active) {
-		dev_info(&lcd->ld->dev, "%s: gpio_con_active is %d\n", __func__, gpio_active);
+		dev_dbg(&lcd->ld->dev, "%s: gpio_con_active is %d\n", __func__, gpio_active);
 		return;
 	}
 
@@ -774,7 +774,7 @@ static void panel_conn_register(struct lcd_info *lcd)
 
 	lcd->conn_workqueue = create_singlethread_workqueue("lcd_conn_workqueue");
 	if (!lcd->conn_workqueue) {
-		dev_info(&lcd->ld->dev, "%s: create_singlethread_workqueue fail\n", __func__);
+		dev_dbg(&lcd->ld->dev, "%s: create_singlethread_workqueue fail\n", __func__);
 		return;
 	}
 
@@ -824,7 +824,7 @@ static int __init panel_conn_init(void)
 		panel_conn_register(lcd);
 	}
 
-	dev_info(&lcd->ld->dev, "%s: %s: done\n", kbasename(__FILE__), __func__);
+	dev_dbg(&lcd->ld->dev, "%s: %s: done\n", kbasename(__FILE__), __func__);
 
 	return 0;
 }
