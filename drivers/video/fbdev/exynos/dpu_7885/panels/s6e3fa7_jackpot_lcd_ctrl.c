@@ -11,6 +11,7 @@
 #include <linux/backlight.h>
 #include <linux/of_device.h>
 #include <linux/ctype.h>
+#include <linux/kernfs.h>
 #include <video/mipi_display.h>
 
 #include "../decon.h"
