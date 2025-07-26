@@ -33,7 +33,7 @@ class EurekaKernelBuild(KernelBuild):
 
     def buildDefconfigList(self) -> "list[str]":
         args = self.args
-        defconfigs = [f"{args.target}_defconfig"]
+        defconfigs = ["exynos7885_defconfig", f"{args.target}.config"]
         if args.no_ksu:
             defconfigs.append("noksu.config")
         return defconfigs
