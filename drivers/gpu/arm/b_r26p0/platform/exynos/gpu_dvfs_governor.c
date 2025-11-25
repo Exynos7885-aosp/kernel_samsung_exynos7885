@@ -121,7 +121,7 @@ static int gpu_dvfs_governor_interactive(struct exynos_context *platform, int ut
 			&& (utilization > platform->table[platform->step].max_threshold ||
 			     utilization > platform->interactive.highspeed_load)) {
 		int highspeed_level = gpu_dvfs_get_level(platform->interactive.highspeed_clock);
-		if ((highspeed_level > 0) && (platform->step > highspeed_level)
+		if ((highspeed_level >= 0) && (platform->step > highspeed_level)
 				&& (utilization > platform->interactive.highspeed_load)) {
 			if (platform->interactive.delay_count == platform->interactive.highspeed_delay) {
 				platform->step = highspeed_level;

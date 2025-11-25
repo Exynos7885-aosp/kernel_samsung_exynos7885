@@ -10,6 +10,7 @@
 #include <linux/file.h>
 #include <linux/module.h>
 #include <linux/vmalloc.h>
+#include <linux/proc_fs.h>
 
 #define ALIGNMENT_SIZE	 4
 
@@ -264,6 +265,8 @@ err_pll_list_allocation:
 	return ret;
 }
 
+static int always_enable = 1;
+
 static int ect_parse_voltage_table(int parser_version, void **address, struct ect_voltage_domain *domain, struct ect_voltage_table *table)
 {
 	int num_of_data = domain->num_of_group * domain->num_of_level;
@@ -276,6 +279,7 @@ static int ect_parse_voltage_table(int parser_version, void **address, struct ec
 
 		table->level_en = *address;
 		*address += sizeof(int32_t) * domain->num_of_level;
+		table->level_en = &always_enable;
 	} else {
 		table->boot_level_idx = -1;
 		table->resume_level_idx = -1;
@@ -2357,6 +2361,53 @@ struct ect_new_timing_param_size *ect_new_timing_param_get_key(void *block, unsi
 	return NULL;
 }
 
+#define ECT_DUMP_NAME "ect_dump"
+
+static size_t ect_dump_size;
+
+static ssize_t ect_dump_read(struct file *file, char __user *buf,
+                             size_t count, loff_t *ppos)
+{
+    if (!ect_early_vm.addr || !ect_dump_size)
+        return -ENODEV;
+
+    return simple_read_from_buffer(buf, count, ppos,
+                                   ect_early_vm.addr,
+                                   ect_dump_size);
+}
+
+static const struct file_operations ect_dump_fops = {
+    .owner  = THIS_MODULE,
+    .read   = ect_dump_read,
+    .llseek = default_llseek,
+};
+
+static void ect_create_proc_dump(struct ect_header *ect_header)
+{
+    static int created;
+    size_t size;
+
+    if (created)
+        return;
+
+    if (!ect_early_vm.addr || !ect_size || !ect_header)
+        return;
+
+    size = ect_header->total_size;
+    if (!size || size > ect_size)
+        size = ect_size;
+
+    ect_dump_size = size;
+
+    if (!proc_create(ECT_DUMP_NAME, S_IRUGO, NULL, &ect_dump_fops)) {
+        pr_err("[ECT] : failed to create /proc/%s\n", ECT_DUMP_NAME);
+        ect_dump_size = 0;
+        return;
+    }
+
+    created = 1;
+}
+
 int ect_parse_binary_header(void)
 {
 	int ret = 0;
@@ -2367,6 +2418,38 @@ int ect_parse_binary_header(void)
 	struct ect_header *ect_header;
 
 	ect_init_map_io();
+
+	for (i = 0; i < 19; ++i) *(u32*)((uintptr_t)ect_address + 11316 + (i * 6 + 3) * sizeof(u32)) = 2496;
+	for (i = 0; i < 19; ++i) *(u32*)((uintptr_t)ect_address + 11316 + (i * 6 + 4) * sizeof(u32)) = 2184;
+
+	for (i = 0; i < 15; ++i) *(u32*)((uintptr_t)ect_address + 11780 + (i * 6 + 3) * sizeof(u32)) = 1690;
+	for (i = 0; i < 15; ++i) *(u32*)((uintptr_t)ect_address + 11780 + (i * 6 + 4) * sizeof(u32)) = 1690;
+
+	for (i = 0; i < 13; ++i) *(u32*)((uintptr_t)ect_address + 12932 + (i * 6 + 3) * sizeof(u32)) = 533;
+	for (i = 0; i < 13; ++i) *(u32*)((uintptr_t)ect_address + 12932 + (i * 6 + 4) * sizeof(u32)) = 533;
+
+	for (i = 0; i < 19; ++i) *(u32*)((uintptr_t)ect_address + 12468 + (i * 6 + 3) * sizeof(u32)) = 1300;
+
+	*(u32*)((uintptr_t)ect_address + 29904) = 2496000; // up to 75
+	*(u32*)((uintptr_t)ect_address + 29924) = 2288000; // up to 80
+	*(u32*)((uintptr_t)ect_address + 29944) = 2184000; // up to 85
+	*(u32*)((uintptr_t)ect_address + 29964) = 2184000; // up to 90
+	*(u32*)((uintptr_t)ect_address + 29984) = 2080000; // up to 95
+	*(u32*)((uintptr_t)ect_address + 30004) = 1768000; // up to 100
+
+        *(u32*)((uintptr_t)ect_address + 30068) = 1690000; // up to 75
+        *(u32*)((uintptr_t)ect_address + 30088) = 1690000; // up to 80
+        *(u32*)((uintptr_t)ect_address + 30108) = 1690000; // up to 85
+        *(u32*)((uintptr_t)ect_address + 30128) = 1690000; // up to 90
+        *(u32*)((uintptr_t)ect_address + 30148) = 1690000; // up to 95
+	*(u32*)((uintptr_t)ect_address + 30168) = 1352000; // up to 100
+
+        *(u32*)((uintptr_t)ect_address + 30232) = 1300000; // up to 75
+        *(u32*)((uintptr_t)ect_address + 30252) = 1300000; // up to 80
+        *(u32*)((uintptr_t)ect_address + 30272) = 1300000; // up to 85
+        *(u32*)((uintptr_t)ect_address + 30292) = 1200000; // up to 90
+        *(u32*)((uintptr_t)ect_address + 30312) = 1100000; // up to 95
+        *(u32*)((uintptr_t)ect_address + 30332) = 845000; // up to 100
 
 	address = (void *)ect_address;
 	if (address == NULL)
@@ -2409,6 +2492,8 @@ int ect_parse_binary_header(void)
 	}
 
 	ect_header_info.block_handle = ect_header;
+
+	ect_create_proc_dump(ect_header);
 
 	return ret;
 

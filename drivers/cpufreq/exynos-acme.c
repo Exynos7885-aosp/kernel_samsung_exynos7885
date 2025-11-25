@@ -24,6 +24,8 @@
 
 #include "exynos-acme.h"
 
+extern u32 exynos7885_big_limit;
+
 /*
  * list head of cpufreq domain
  */
@@ -1112,45 +1114,16 @@ static __init int init_domain(struct exynos_cpufreq_domain *domain,
 	domain->boot_freq = cal_dfs_get_boot_freq(domain->cal_id);
 	domain->resume_freq = cal_dfs_get_resume_freq(domain->cal_id);
 
+	if (domain->id == 1) domain->max_freq = exynos7885_big_limit;
+
 	/* Initialize freq boost */
 	if (domain->boost_supported) {
 		unsigned int i, cpu_count = cpumask_weight(&domain->cpus);
 
-		cal_dfs_get_bigturbo_max_freq(domain->boost_max_freqs);
-		if (of_find_property(dn, "boost_max_freqs", NULL)) {
-			unsigned int *max_freqs;
-
-			max_freqs = kzalloc(sizeof(unsigned int) * cpu_count, GFP_KERNEL);
-			if (!max_freqs)
-				return -ENOMEM;
-
-			of_property_read_u32_array(dn, "boost_max_freqs",
-						max_freqs, cpu_count);
-
-			/*
-			 * If boost_max_freqs property exists in device tree,
-			 * frequency is selected to smaller one.
-			 */
-			for (i = 0; i < cpu_count; i++)
-				domain->boost_max_freqs[i] =
-					min(domain->boost_max_freqs[i], max_freqs[i]);
-
-			kfree(max_freqs);
-		}
-
-		for (i = 0; i < cpu_count; i++) {
-			if (domain->boost_max_freqs[i] < domain->min_freq) {
-				pr_err("Wrong boost maximum frequency\n");
-				domain->boost_supported = false;
-				goto init_table;
-			}
-		}
-
-		/* change domain->max_freq to maximum level in boost table */
-		domain->max_freq = max(domain->max_freq, domain->boost_max_freqs[0]);
+		for (i = 0; i < cpu_count; i++)
+			domain->boost_max_freqs[i] = domain->max_freq;
 	}
 
-init_table:
 	ufc_domain_init(domain);
 
 	ret = init_table(domain);
@@ -1206,10 +1179,7 @@ static __init int early_init_domain(struct exynos_cpufreq_domain *domain,
 	if (cpumask_weight(&domain->cpus) == 0)
 		return -ENODEV;
 
-	domain->boost_supported = false;
-	/* Get whether supporting freq boost */
-	if (of_property_read_bool(dn, "boost_supported"))
-		domain->boost_supported = true;
+	domain->boost_supported = true;
 
 	return 0;
 }

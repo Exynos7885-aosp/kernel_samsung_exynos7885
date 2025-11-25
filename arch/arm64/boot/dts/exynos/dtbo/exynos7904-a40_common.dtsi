@@ -808,7 +808,7 @@
 
 			cpufreq {
 				domain@1 {
-					max-freq = <2184000>;
+					max-freq = <2496000>;
 				};
 			};
 

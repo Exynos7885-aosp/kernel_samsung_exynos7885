@@ -4,7 +4,15 @@
 #include <linux/io.h>
 #include <linux/debugfs.h>
 #include <linux/uaccess.h>
+#include <linux/fs.h>
+#include <linux/proc_fs.h>
 #include <soc/samsung/cal-if.h>
+#include <linux/export.h>
+
+u32 exynos7885_big_limit = 2184000;
+EXPORT_SYMBOL(exynos7885_big_limit);
+
+#define MAX_BIG_VOLT 1300000
 
 #include "fvmap.h"
 #include "cmucal.h"
@@ -384,6 +392,80 @@ void fvmap_change_voltage(unsigned int dvfs_id,
 		__func__, dvfs_id, freq, voltage);
 }
 
+#define FVMAP_DUMP_NAME "fvmap_dump"
+
+static u8 fvmap_dump_buf[FVMAP_SIZE];
+
+static ssize_t fvmap_dump_read(struct file *file, char __user *buf,
+				size_t count, loff_t *ppos)
+{
+	memcpy_fromio(fvmap_dump_buf, sram_fvmap_base, FVMAP_SIZE);
+
+	return simple_read_from_buffer(buf, count, ppos, fvmap_dump_buf, FVMAP_SIZE);
+}
+
+static const struct file_operations fvmap_dump_fops = {
+	.owner  = THIS_MODULE,
+	.read   = fvmap_dump_read,
+	.llseek = default_llseek,
+};
+
+inline void fvmap_auto_calc_big_exynos7885(u32 offset)
+{
+    volatile struct rate_volt *rv_array;
+    u32 volt_2184, volt_2080;
+    u32 base_step;
+    u32 acceleration = STEP_UV;
+    u32 current_step;
+
+    u32 raw_2288, raw_2392, raw_2496;
+    u32 fin_2288, fin_2392, fin_2496;
+
+    rv_array = (volatile struct rate_volt *)((uintptr_t)sram_fvmap_base + offset);
+
+    volt_2184 = rv_array[3].volt;
+    volt_2080 = rv_array[4].volt;
+
+    base_step = volt_2184 - volt_2080;
+
+    if (base_step == 0 || base_step > 100000) base_step = 10 * STEP_UV;
+
+    current_step = base_step + acceleration;
+    raw_2288 = volt_2184 + current_step;
+
+    current_step += acceleration;
+    raw_2392 = raw_2288 + current_step;
+
+    current_step += acceleration;
+    raw_2496 = raw_2392 + current_step;
+
+    if (raw_2288 <= MAX_BIG_VOLT) exynos7885_big_limit = 2288000;
+    if (raw_2392 <= MAX_BIG_VOLT) exynos7885_big_limit = 2392000;
+    if (raw_2496 <= MAX_BIG_VOLT) exynos7885_big_limit = 2496000;
+
+    fin_2288 = (raw_2288 > MAX_BIG_VOLT) ? MAX_BIG_VOLT : raw_2288;
+    fin_2392 = (raw_2392 > MAX_BIG_VOLT) ? MAX_BIG_VOLT : raw_2392;
+    fin_2496 = (raw_2496 > MAX_BIG_VOLT) ? MAX_BIG_VOLT : raw_2496;
+
+    rv_array[2].rate = 2288000;
+    rv_array[2].volt = fin_2288;
+
+    rv_array[1].rate = 2392000;
+    rv_array[1].volt = fin_2392;
+
+    rv_array[0].rate = 2496000;
+    rv_array[0].volt = fin_2496;
+}
+
+inline void fvmap_override_exynos7885(u32 offset, u32 index, u32 rate, u32 increase_volt)
+{
+        volatile struct rate_volt *rv_array = (volatile struct rate_volt *)((uintptr_t)sram_fvmap_base + offset);
+        volatile struct rate_volt *rv_target = &rv_array[index];
+
+	rv_target->volt += increase_volt;
+        rv_target->rate = rate;
+}
+
 int fvmap_init(void __iomem *_sram_base)
 {
 	sram_base = _sram_base;
@@ -391,8 +473,13 @@ int fvmap_init(void __iomem *_sram_base)
 
 	fvmap_base = map_base;
 	sram_fvmap_base = sram_base;
+
+	fvmap_auto_calc_big_exynos7885(764);
+
 	pr_info("%s: fvmap initialized %pK\n", __func__, sram_base);
 	fvmap_copy_from_sram(map_base, sram_base, NULL);
+
+	proc_create(FVMAP_DUMP_NAME, 0444, NULL, &fvmap_dump_fops);
 
 	return 0;
 }
