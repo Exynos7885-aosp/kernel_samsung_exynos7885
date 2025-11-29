@@ -8,6 +8,10 @@
 #include "sched.h"
 #include "tune.h"
 
+#ifdef CONFIG_CGROUP_SCHEDTUNE
+bool schedtune_initialized = false;
+#endif
+
 unsigned int sysctl_sched_cfs_boost __read_mostly;
 
 #ifdef CONFIG_CGROUP_SCHEDTUNE
@@ -205,6 +209,9 @@ void schedtune_enqueue_task(struct task_struct *p, int cpu)
 
 	schedtune_tasks_update(p, cpu, idx, 1);
 }
+
+#define ENQUEUE_TASK  1
+#define DEQUEUE_TASK -1
 
 /*
  * NOTE: This function must be called while holding the lock on the CPU RQ

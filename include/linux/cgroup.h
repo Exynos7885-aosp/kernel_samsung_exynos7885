@@ -761,6 +761,7 @@ struct cgroup_namespace {
 	refcount_t		count;
 	struct ns_common	ns;
 	struct user_namespace	*user_ns;
+	struct ucounts		*ucounts;
 	struct css_set          *root_cset;
 };
 
