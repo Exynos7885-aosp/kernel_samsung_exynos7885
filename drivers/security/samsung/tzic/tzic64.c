@@ -37,7 +37,7 @@
 #if defined(CONFIG_TEEGRIS_VERSION) && (CONFIG_TEEGRIS_VERSION >= 4)
 #include "extensions/irs.h"
 #else
-#include "tzirs.h"
+#include "../../../../drivers/misc/tzdev/tzirs.h"
 #endif
 #endif /* CONFIG_TZDEV */
 
