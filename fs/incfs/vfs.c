@@ -170,14 +170,14 @@ static const struct inode_operations incfs_file_inode_ops = {
 };
 
 static int incfs_handler_getxattr(const struct xattr_handler *xh,
-				  struct dentry *d, struct inode *inode,
+				  struct dentry *d,
 				  const char *name, void *buffer, size_t size)
 {
 	return incfs_getxattr(d, name, buffer, size);
 }
 
 static int incfs_handler_setxattr(const struct xattr_handler *xh,
-				  struct dentry *d, struct inode *inode,
+				  struct dentry *d,
 				  const char *name, const void *buffer,
 				  size_t size, int flags)
 {
