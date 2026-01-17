@@ -327,7 +327,8 @@ out_putf:
 }
 #endif
 
-ssize_t vfs_iter_read(struct file *file, struct iov_iter *iter, loff_t *ppos)
+ssize_t vfs_iter_read(struct file *file, struct iov_iter *iter, loff_t *ppos,
+		int flags)
 {
 	struct kiocb kiocb;
 	ssize_t ret;
@@ -347,7 +348,8 @@ ssize_t vfs_iter_read(struct file *file, struct iov_iter *iter, loff_t *ppos)
 }
 EXPORT_SYMBOL(vfs_iter_read);
 
-ssize_t vfs_iter_write(struct file *file, struct iov_iter *iter, loff_t *ppos)
+ssize_t vfs_iter_write(struct file *file, struct iov_iter *iter, loff_t *ppos,
+		int flags)
 {
 	struct kiocb kiocb;
 	ssize_t ret;
