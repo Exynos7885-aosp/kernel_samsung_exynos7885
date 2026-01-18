@@ -721,6 +721,8 @@ __SYSCALL(__NR_copy_file_range, sys_copy_file_range)
 __SYSCALL(__NR_preadv2, sys_preadv2)
 #define __NR_pwritev2 287
 __SYSCALL(__NR_pwritev2, sys_pwritev2)
+#define __NR_statx 291
+__SYSCALL(__NR_statx, sys_statx)
 #define __NR_pidfd_send_signal 424
 __SYSCALL(__NR_pidfd_send_signal, sys_pidfd_send_signal)
 #define __NR_pidfd_open 434
