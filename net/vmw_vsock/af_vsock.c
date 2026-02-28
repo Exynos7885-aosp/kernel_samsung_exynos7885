@@ -516,7 +516,8 @@ static int __vsock_bind_stream(struct vsock_sock *vsk,
 		unsigned int i;
 
 		for (i = 0; i < MAX_PORT_RETRIES; i++) {
-			if (port <= LAST_RESERVED_PORT)
+			if (port == VMADDR_PORT_ANY ||
+			    port <= LAST_RESERVED_PORT)
 				port = LAST_RESERVED_PORT + 1;
 
 			new_addr.svm_port = port++;
@@ -1208,6 +1209,11 @@ static int vsock_stream_connect(struct socket *sock, struct sockaddr *addr,
 		err = transport->connect(vsk);
 		if (err < 0)
 			goto out;
+
+		/* sk_err might have been set as a result of an earlier
+		 * (failed) connect attempt.
+		 */
+		sk->sk_err = 0;
 
 		/* Mark sock as connecting and set the error code to in
 		 * progress in case this is a non-blocking connect.
