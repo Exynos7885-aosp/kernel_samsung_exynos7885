@@ -16,9 +16,9 @@ class EurekaKernelBuild(KernelBuild):
             "--target", type=str, required=True, help="Target device (a10/a20/...)"
         )
         parser.add_argument(
-            "--no-ksu",
+            "-d",
             action="store_true",
-            help="Don't include KernelSU support in kernel",
+            help="Build debuggable kernel",
         )
         return parser
 
@@ -34,8 +34,8 @@ class EurekaKernelBuild(KernelBuild):
     def buildDefconfigList(self) -> "list[str]":
         args = self.args
         defconfigs = ["exynos7885_defconfig", f"{args.target}.config"]
-        if args.no_ksu:
-            defconfigs.append("noksu.config")
+        if args.d:
+           defconfigs.append("debugging.config")
         return defconfigs
 
     def additionalMakeArgs(self) -> "list[str]":
@@ -45,7 +45,7 @@ class EurekaKernelBuild(KernelBuild):
         args = self.args
         return {
             "TARGET_DEVICE": args.target,
-            "TARGET_INCLUDES_KSU": not args.no_ksu,
+            "DEBUG_KERNEL": args.d,
         }
 
     def zipName(self, name: str, time: str):

@@ -52,7 +52,7 @@ parse_symbol() {
 	if [[ "${cache[$address]+isset}" == "isset" ]]; then
 		local code=${cache[$address]}
 	else
-		local code=$(addr2line -i -e "$vmlinux" "$address")
+		local code=$(llvm-addr2line -i -e "$vmlinux" "$address")
 		cache[$address]=$code
 	fi
 
