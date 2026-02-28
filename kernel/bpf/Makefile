@@ -1,5 +1,6 @@
 obj-y := core.o
 CFLAGS_core.o += $(call cc-disable-warning, override-init)
+CFLAGS_core.o += $(call cc-disable-warning, incompatible-pointer-types)
 
 obj-$(CONFIG_BPF_SYSCALL) += syscall.o verifier.o inode.o helpers.o tnum.o
 obj-$(CONFIG_BPF_SYSCALL) += hashtab.o arraymap.o percpu_freelist.o bpf_lru_list.o lpm_trie.o map_in_map.o
