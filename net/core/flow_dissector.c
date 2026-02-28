@@ -18,7 +18,6 @@
 #include <linux/mpls.h>
 #include <net/flow_dissector.h>
 #include <scsi/fc/fc_fcoe.h>
-#include <linux/net_map.h>
 #include <linux/bpf.h>
 
 static DEFINE_MUTEX(flow_dissector_mutex);
