@@ -13,6 +13,7 @@
 #include <linux/mm.h>
 #include <linux/kallsyms.h>
 #include <linux/stacktrace.h>
+#include <linux/set_memory.h>
 
 #include <asm/cacheflush.h>
 #include <asm/pgtable.h>
@@ -2021,32 +2022,6 @@ static int fimc_is_memory_page_range(pte_t *ptep, pgtable_t token, unsigned long
 	return 0;
 }
 
-static int fimc_is_memory_attribute_change(ulong addr, int numpages,
-		pgprot_t set_mask, pgprot_t clear_mask)
-{
-	ulong start = addr;
-	ulong size = PAGE_SIZE * numpages;
-	ulong end = start + size;
-	int ret;
-	struct fimc_is_memory_change_data data;
-
-	if (!IS_ALIGNED(addr, PAGE_SIZE)) {
-		start &= PAGE_MASK;
-		end = start + size;
-		WARN_ON_ONCE(1);
-	}
-
-	data.set_mask = set_mask;
-	data.clear_mask = clear_mask;
-
-	ret = apply_to_page_range(&init_mm, start, size, fimc_is_memory_page_range,
-					&data);
-
-	flush_tlb_kernel_range(start, end);
-
-	return ret;
-}
-
 int fimc_is_memory_attribute_nxrw(struct fimc_is_memory_attribute *attribute)
 {
 	int ret;
@@ -2056,19 +2031,13 @@ int fimc_is_memory_attribute_nxrw(struct fimc_is_memory_attribute *attribute)
 		return -EINVAL;
 	}
 
-	ret = fimc_is_memory_attribute_change(attribute->vaddr,
-			attribute->numpages,
-			__pgprot(PTE_PXN),
-			__pgprot(0));
+	ret = set_memory_nx(attribute->vaddr, attribute->numpages);
 	if (ret) {
 		err_lib("memory attribute change fail [PTE_PX -> PTE_PXN]\n");
 		return ret;
 	}
 
-	ret = fimc_is_memory_attribute_change(attribute->vaddr,
-			attribute->numpages,
-			__pgprot(PTE_WRITE),
-			__pgprot(PTE_RDONLY));
+	ret = set_memory_rw(attribute->vaddr, attribute->numpages);
 	if (ret) {
 		err_lib("memory attribute change fail [PTE_RDONLY -> PTE_WRITE]\n");
 		goto memory_excutable;
@@ -2079,10 +2048,7 @@ int fimc_is_memory_attribute_nxrw(struct fimc_is_memory_attribute *attribute)
 	return 0;
 
 memory_excutable:
-	ret = fimc_is_memory_attribute_change(attribute->vaddr,
-			attribute->numpages,
-			__pgprot(0),
-			__pgprot(PTE_PXN));
+	ret = set_memory_x(attribute->vaddr, attribute->numpages);
 	if (ret)
 		err_lib("memory attribute change fail [PTE_PXN -> PTE_PX]\n");
 
@@ -2098,19 +2064,13 @@ int fimc_is_memory_attribute_rox(struct fimc_is_memory_attribute *attribute)
 		return -EINVAL;
 	}
 
-	ret = fimc_is_memory_attribute_change(attribute->vaddr,
-			attribute->numpages,
-			__pgprot(PTE_RDONLY),
-			__pgprot(PTE_WRITE));
+	ret = set_memory_ro(attribute->vaddr, attribute->numpages);
 	if (ret) {
 		err_lib("memory attribute change fail [PTE_WRITE -> PTE_RDONLY]\n");
 		return ret;
 	}
 
-	ret = fimc_is_memory_attribute_change(attribute->vaddr,
-			attribute->numpages,
-			__pgprot(0),
-			__pgprot(PTE_PXN));
+	ret = set_memory_x(attribute->vaddr, attribute->numpages);
 	if (ret) {
 		err_lib("memory attribute change fail [PTE_PXN -> PTE_PX]\n");
 		return ret;
