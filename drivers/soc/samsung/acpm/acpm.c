@@ -92,32 +92,42 @@ static int firmware_update(struct device *dev, void *fw_base, const char *fw_nam
 
 static int plugins_init(void)
 {
-	struct plugin *plugins;
 	int i, len, ret = 0;
 	unsigned int plugin_id;
-	char name[50];
-	const char *fw_name = NULL;
 	void __iomem *fw_base_addr = 0, *dvfs_base_addr = 0;
 	struct device_node *node, *child;
 	const __be32 *prop;
 	unsigned int offset;
 
-	plugins = (struct plugin *)(acpm_srambase + acpm_initdata->plugins);
-
 	for (i = 0; i < acpm_initdata->num_plugins; i++) {
-		if ((plugins[i].is_attached == 0 && plugins[i].stay_attached == 1) ||
-			(plugins[i].is_attached == 1 && plugins[i].stay_attached == 0)) {
+		struct plugin p;
+		void __iomem *plugin_io_addr;
+		char sram_fw_name[50];
+		const char* active_fw_name;
 
-			if (plugins[i].is_attached == 0 && plugins[i].stay_attached == 1) {
-				fw_name = (const char *)(acpm_srambase + plugins[i].fw_name);
-				if (!plugins[i].fw_name) {
-					dev_err(exynos_acpm->dev, "fw_name missing on plugins %d.\n", plugins[i].id);
+		// Copy plugin struct from IOMEM
+		plugin_io_addr = acpm_srambase + acpm_initdata->plugins + (i * sizeof(struct plugin));
+		memcpy_fromio(&p, plugin_io_addr, sizeof(struct plugin));
+
+		// Copy fw_name string
+		if (p.fw_name) {
+			void __iomem *name_io_addr = acpm_srambase + p.fw_name;
+			memcpy_fromio(sram_fw_name, name_io_addr, sizeof(sram_fw_name) - 1);
+			active_fw_name = sram_fw_name;
+		}
+
+		if ((p.is_attached == 0 && p.stay_attached == 1) ||
+			(p.is_attached == 1 && p.stay_attached == 0)) {
+
+			if (p.is_attached == 0 && p.stay_attached == 1) {
+				if (!p.fw_name) {
+					dev_err(exynos_acpm->dev, "fw_name missing on plugins %d.\n", p.id);
 					return -ENOENT;
 				}
 
-				fw_base_addr = acpm_srambase + (plugins[i].base_addr & ~0x1);
-				if (!plugins[i].base_addr) {
-					dev_err(exynos_acpm->dev, "base_addr missing on plugins %d.\n", plugins[i].id);
+				fw_base_addr = acpm_srambase + (p.base_addr & ~0x1);
+				if (!p.base_addr) {
+					dev_err(exynos_acpm->dev, "base_addr missing on plugins %d.\n", p.id);
 					return -ENOENT;
 				}
 
@@ -132,36 +142,32 @@ static int plugins_init(void)
 					if (plugin_id != i)
 						continue;
 
-					if (of_property_read_string(child, "fw-name", &fw_name)) {
+					if (of_property_read_string(child, "fw-name", &active_fw_name)) {
 						dev_err(exynos_acpm->dev, "fw name of plugin %d is invalid in DT.\n", i);
 						return -EINVAL;
 					}
 				}
 
-				strncpy(name, fw_name, 50);
-				name[49]= 0;
-
-				ret = firmware_update(exynos_acpm->dev, fw_base_addr, name);
+				ret = firmware_update(exynos_acpm->dev, fw_base_addr, active_fw_name);
 				if (ret) {
-					dev_err(exynos_acpm->dev, "firmware_update failed for %s\n", name);
+					dev_err(exynos_acpm->dev, "firmware_update failed for %s\n", active_fw_name);
 					continue;
 				}
 			}
 
-			ret = handle_dynamic_plugin(exynos_acpm->dev->of_node, plugins[i].id, plugins[i].stay_attached);
+			ret = handle_dynamic_plugin(exynos_acpm->dev->of_node, p.id, p.stay_attached);
 			if (ret < 0)
 				dev_err(exynos_acpm->dev, "plugin attach/detach:%u fail! plugin_id:%d, ret:%d",
-						plugins[i].stay_attached, plugins[i].id, ret);
+						p.stay_attached, p.id, ret);
 #ifdef CONFIG_ACPM_DVFS
-			if (fw_name && strstr(fw_name, "dvfs"))
-				fvmap_init(fw_base_addr + plugins[i].size);
+			if (active_fw_name && strstr(active_fw_name, "dvfs"))
+				fvmap_init(fw_base_addr + p.size);
 #endif
 
-		} else if (plugins[i].is_attached == 1 && plugins[i].stay_attached == 1) {
-			fw_name = (const char *)(acpm_srambase + plugins[i].fw_name);
-			if (plugins[i].fw_name && fw_name &&
-					(strstr(fw_name, "DVFS") || strstr(fw_name, "dvfs")))
-				dvfs_base_addr = acpm_srambase + (plugins[i].base_addr & ~0x1);
+		} else if (p.is_attached == 1 && p.stay_attached == 1) {
+			if (p.fw_name && active_fw_name &&
+					(strstr(active_fw_name, "DVFS") || strstr(active_fw_name, "dvfs")))
+				dvfs_base_addr = acpm_srambase + (p.base_addr & ~0x1);
 		}
 	}
 
