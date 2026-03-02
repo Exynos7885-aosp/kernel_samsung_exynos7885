@@ -1396,6 +1396,7 @@ static void __decon_update_regs(struct decon_device *decon, struct decon_reg_dat
 	int err_cnt = 0;
 	unsigned short i, j;
 	struct decon_mode_info psr;
+	bool has_cursor_win = false;
 #if defined(CONFIG_SUPPORT_MASK_LAYER)
 	int trigger_check = 0;
 #endif
@@ -1418,6 +1419,10 @@ static void __decon_update_regs(struct decon_device *decon, struct decon_reg_dat
 	dpu_set_win_update_config(decon, regs);
 
 	for (i = 0; i < decon->dt.max_win; i++) {
+		if (regs->is_cursor_win[i]) {
+			dpu_cursor_win_update_config(decon, regs);
+			has_cursor_win = true;
+		}
 		/* set decon registers for each window */
 		decon_reg_set_window_control(decon->id, i, &regs->win_regs[i],
 						regs->win_regs[i].winmap_state);
@@ -1466,6 +1471,9 @@ static void __decon_update_regs(struct decon_device *decon, struct decon_reg_dat
 #endif
 		BUG();
 	}
+
+	decon_set_cursor_unmask(decon, has_cursor_win);
+
 #if defined(CONFIG_SUPPORT_MASK_LAYER)
 trigger_done:
 #endif
@@ -1616,6 +1624,10 @@ static void decon_update_regs(struct decon_device *decon,
 	} else {
 		decon->frame_cnt_target = decon->frame_cnt + 1;
 		decon_wait_for_vsync(decon, VSYNC_TIMEOUT_MSEC);
+
+		if (decon->cursor.unmask)
+			decon_set_cursor_unmask(decon, false);
+
 		decon_wait_for_vstatus(decon, 50);
 		if (decon_reg_wait_for_update_timeout(decon->id, SHADOW_UPDATE_TIMEOUT) < 0 && !decon->ignore_vsync) {
 			decon_dump(decon);
@@ -1670,6 +1682,7 @@ static void decon_update_regs_handler(struct kthread_work *work)
 	mutex_unlock(&decon->up.lock);
 
 	list_for_each_entry_safe(data, next, &saved_list, list) {
+		decon_set_cursor_reset(decon, data);
 		decon_update_regs(decon, data);
 		decon_hiber_unblock(decon);
 		list_del(&data->list);
@@ -1695,6 +1708,7 @@ static int decon_get_active_win_count(struct decon_device *decon,
 
 		case DECON_WIN_STATE_COLOR:
 		case DECON_WIN_STATE_BUFFER:
+		case DECON_WIN_STATE_CURSOR:
 			win_cnt++;
 			break;
 
@@ -1750,6 +1764,7 @@ static int decon_prepare_win_config(struct decon_device *decon,
 			ret = 0;
 			break;
 		case DECON_WIN_STATE_BUFFER:
+		case DECON_WIN_STATE_CURSOR:   /* cursor async */
 			if (decon_set_win_blocking_mode(decon, i, win_config, regs))
 				break;
 
@@ -1757,6 +1772,13 @@ static int decon_prepare_win_config(struct decon_device *decon,
 			ret = decon_set_win_buffer(decon, config, regs, i);
 			if (!ret)
 				color_map = false;
+
+			regs->is_cursor_win[i] = false;
+			if (config->state == DECON_WIN_STATE_CURSOR) {
+				regs->is_cursor_win[i] = true;
+				regs->cursor_win = i;
+			}
+			config->state = DECON_WIN_STATE_BUFFER;
 			break;
 		default:
 			win_regs->wincon &= ~WIN_EN_F(i);
@@ -1952,6 +1974,7 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 	struct decon_disp_info __user *argp_info;
 	struct decon_hdr_capabilities hdr_capa;
 	struct decon_hdr_capabilities_info hdr_capa_info;
+	struct decon_user_window user_window;
 #endif
 	int ret = 0;
 	u32 crtc;
@@ -2128,6 +2151,26 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 				&decon->frm_status, sizeof(u32))) {
 			ret = -EFAULT;
 			break;
+		}
+		break;
+
+	case DECON_WIN_CURSOR_POS:	/* cursor async */
+		if (copy_from_user(&user_window,
+			(struct decon_user_window __user *)arg,
+			sizeof(struct decon_user_window))) {
+			ret = -EFAULT;
+			break;
+		}
+		if ((decon->id == 2) &&
+				(decon->lcd_info->mode == DECON_VIDEO_MODE)) {
+			decon_dbg("cursor pos : x:%d, y:%d\n",
+					user_window.x, user_window.y);
+			ret = decon_set_cursor_win_config(decon, user_window.x,
+					user_window.y);
+		} else {
+			decon_err("decon[%d] is not support CURSOR ioctl\n",
+					decon->id);
+			ret = -EPERM;
 		}
 		break;
 
@@ -3007,6 +3050,7 @@ static int decon_probe(struct platform_device *pdev)
 		goto err_win;
 
 	dpu_init_win_update(decon);
+	dpu_init_cursor_mode(decon);
 
 	decon->bts.ops = &decon_bts_control;
 	decon->bts.ops->bts_init(decon);

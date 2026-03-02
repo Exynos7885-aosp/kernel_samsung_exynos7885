@@ -645,6 +645,7 @@ struct decon_win_config {
 		DECON_WIN_STATE_COLOR,
 		DECON_WIN_STATE_BUFFER,
 		DECON_WIN_STATE_UPDATE,
+		DECON_WIN_STATE_CURSOR,
 		DECON_WIN_STATE_FINGERPRINT = 0x20000,
 	} state;
 
@@ -704,6 +705,10 @@ struct decon_reg_data {
 	bool protection[MAX_DECON_WIN];
 	/* release fence*/
 	struct sync_pt *pt;
+	
+	/* cursor async */
+	bool is_cursor_win[MAX_DECON_WIN];
+	int cursor_win;
 
 #if defined(CONFIG_SUPPORT_MASK_LAYER)
 	bool mask_layer;
@@ -820,12 +825,22 @@ typedef enum dpu_event_type {
 	DPU_EVT_DMA_RECOVERY,
 
 	DPU_EVT_DECON_SET_BUFFER,
+	/* cursor async */
+	DPU_EVT_CURSOR_POS,
+	DPU_EVT_CURSOR_UPDATE,
 
 	DPU_EVT_DOZE,
 	DPU_EVT_DOZE_SUSPEND,
 
 	DPU_EVT_MAX, /* End of EVENT */
 } dpu_event_t;
+
+/* Related with Cursor */
+struct disp_log_cursor {
+	u32 xpos;
+	u32 ypos;
+	ktime_t elapsed;	/* End time - Start time */
+};
 
 /* Related with Fence */
 #define ACQUIRE_FENCE_LEN 40
@@ -882,6 +897,7 @@ struct dpu_log {
 		struct dsim_log_cmd_buf cmd_buf;
 		struct disp_log_pm pm;
 		struct disp_log_fence fence;
+		struct disp_log_cursor cursor;
 	} data;
 };
 
@@ -905,6 +921,7 @@ void DPU_EVENT_LOG(dpu_event_t type, struct v4l2_subdev *sd, ktime_t time);
 void DPU_EVENT_LOG_WINCON(struct v4l2_subdev *sd, struct decon_reg_data *regs);
 void DPU_EVENT_LOG_FENCE(struct v4l2_subdev *sd, struct decon_reg_data *regs, dpu_event_t type);
 void DPU_EVENT_LOG_CMD(struct v4l2_subdev *sd, u32 cmd_id, unsigned long data, u32 size);
+void DPU_EVENT_LOG_CURSOR(struct v4l2_subdev *sd, struct decon_reg_data *regs); /* cursor async */
 void DPU_EVENT_SHOW(struct seq_file *s, struct decon_device *decon);
 void DPU_EVENT_LOG_WIN_CONFIG(struct v4l2_subdev *sd, struct decon_win_config_data *win_data);
 void DPU_EVENT_LOG_INSTANT_OFF(struct v4l2_subdev *sd);
@@ -985,6 +1002,12 @@ struct decon_win {
 	int idx;
 	int dpp_id;
 	u32 pseudo_palette[16];
+};
+
+/* cursor async */
+struct decon_user_window {
+	int x;
+	int y;
 };
 
 struct decon_debug {
@@ -1071,6 +1094,16 @@ struct decon_bts {
 	u32 disp_freq_minlock;
 };
 
+/* cursor async */
+struct decon_cursor {
+	struct decon_reg_data regs;
+	struct mutex lock;
+	u32 xpos;
+	u32 ypos;
+	bool unmask;	/* if true, cursor unmask period */
+	bool enabled;
+};
+
 struct decon_device {
 	int id;
 	enum decon_state state;
@@ -1122,6 +1155,7 @@ struct decon_device {
 	struct decon_win_update win_up;
 	struct decon_hiber hiber;
 	struct decon_bts bts;
+	struct decon_cursor cursor;
 
 	int frame_cnt;
 	int frame_cnt_target;
@@ -1507,6 +1541,16 @@ enum doze_state {
 
 #define IS_DOZE(doze_state)		(doze_state == DOZE_STATE_DOZE || doze_state == DOZE_STATE_DOZE_SUSPEND)
 #endif
+
+/* cursor async mode functions */
+void decon_set_cursor_reset(struct decon_device *decon,
+		struct decon_reg_data *regs);
+void decon_set_cursor_unmask(struct decon_device *decon, bool unmask);
+void dpu_cursor_win_update_config(struct decon_device *decon,
+		struct decon_reg_data *regs);
+int decon_set_cursor_win_config(struct decon_device *decon, int x, int y);
+void dpu_init_cursor_mode(struct decon_device *decon);
+
 /* IOCTL commands */
 #define S3CFB_SET_VSYNC_INT		_IOW('F', 206, __u32)
 #define S3CFB_WIN_CONFIG_OLD		_IOW('F', 209, \
@@ -1528,6 +1572,9 @@ enum doze_state {
 						struct exynos_displayport_data)
 #define EXYNOS_SET_DISPLAYPORT_CONFIG		_IOW('F', 301, \
 						struct exynos_displayport_data)
+
+/* cursor async */
+#define DECON_WIN_CURSOR_POS		_IOW('F', 222, struct decon_user_window)
 #define S3CFB_POWER_MODE		_IOW('F', 223, __u32)
 
 #if defined(CONFIG_DPU_20)

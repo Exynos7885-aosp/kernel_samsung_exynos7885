@@ -92,6 +92,11 @@ config LOGGING_BIGDATA_BUG
 	depends on SEC_DEBUG
 	default n
 
+config EXYNOS_CURSOR
+	bool "Support Cursor Async Mode"
+        depends on DPU_20
+	default n
+
 endif
 
 source "drivers/video/fbdev/exynos/dpu_7885/panels/Kconfig"
