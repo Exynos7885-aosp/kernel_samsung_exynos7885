@@ -428,26 +428,7 @@ void DPU_EVENT_LOG_CMD(struct v4l2_subdev *sd, u32 cmd_id, unsigned long data, u
 
 void DPU_EVENT_LOG_CURSOR(struct v4l2_subdev *sd, struct decon_reg_data *regs)
 {
-	struct decon_device *decon = container_of(sd, struct decon_device, sd);
-	struct dpu_log *log;
-	int idx;
-
-	if (IS_ERR_OR_NULL(decon->d.event_log))
-		return;
-	idx = atomic_inc_return(&decon->d.event_log_idx) % decon->d.event_log_cnt;
-	log = &decon->d.event_log[idx];
-	log->magic = DPU_LOG_VALID_MARK;
-	log->time = ktime_get();
-	log->type = DPU_EVT_CURSOR_UPDATE;
-
-	if (regs->is_cursor_win[regs->cursor_win]) {
-		memcpy(&log->data.win_regs, &regs->win_regs[regs->cursor_win],
-			sizeof(struct decon_window_regs));
-		memcpy(&log->data.win_config, &regs->dpp_config[regs->cursor_win],
-			sizeof(struct decon_win_config));
-	} else {
-		log->data.win_config.state = DECON_WIN_STATE_DISABLED;
-	}
+	return;
 }
 
 /* display logged events related with DECON */
