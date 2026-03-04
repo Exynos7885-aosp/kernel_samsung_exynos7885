@@ -582,12 +582,14 @@ static int __init fimc_is_lib_mem_alloc(char *str)
 
 	if (kstrtoul(str, 0, (ulong *)&addr) || !addr) {
 		probe_warn("invalid fimc-is library memory address, use default");
-		addr = __LIB_START;
+		addr = LIB_START;
 	}
 
-	if (addr != __LIB_START)
+	if (addr != LIB_START) {
 		probe_warn("use different address [reserve-fimc=0x%lx default:0x%lx]",
-				addr, __LIB_START);
+				addr, LIB_START);
+		addr = LIB_START;
+	}
 
 	fimc_is_lib_vm.phys_addr = memblock_alloc(LIB_SIZE, SZ_2M);
 	fimc_is_lib_vm.addr = (void *)addr;
