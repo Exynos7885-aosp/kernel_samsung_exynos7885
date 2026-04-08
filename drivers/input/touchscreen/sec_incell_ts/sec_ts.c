@@ -879,7 +879,7 @@ static void sec_ts_read_event(struct sec_ts_data *ts)
 			}
 			break;
 		default:
-			input_err(true, &ts->client->dev, "%s: unknown event %x %x %x %x %x %x\n", __func__,
+			input_dbg(true, &ts->client->dev, "%s: unknown event %x %x %x %x %x %x\n", __func__,
 					event_buff[0], event_buff[1], event_buff[2],
 					event_buff[3], event_buff[4], event_buff[5]);
 			break;
