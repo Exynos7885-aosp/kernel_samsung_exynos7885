@@ -647,6 +647,11 @@ struct s2mu106_usbpd_data {
 	data_obj_type obj[S2MU106_MAX_NUM_MSG_OBJ];
 	u64 status_reg;
 	bool lpm_mode;
+#ifdef CONFIG_PM_S2MU106
+	bool wdt_lpm_hold;
+	unsigned int wdt_lpm_poll_fail_cnt;
+	struct delayed_work wdt_lpm_poll_work;
+#endif
 	bool detach_valid;
 	bool is_factory_mode;
 	bool is_water_detect;
@@ -711,6 +716,8 @@ struct s2mu106_usbpd_data {
 };
 
 extern int s2mu106_usbpd_get_adc(void);
+extern ssize_t s2mu106_usbpd_debug_dump(struct s2mu106_usbpd_data *pdic_data,
+						char *buf);
 extern void s2mu106_usbpd_set_muic_type(int type);
 #if defined(CONFIG_CCIC_NOTIFIER)
 extern void s2mu106_control_option_command(struct s2mu106_usbpd_data *usbpd_data, int cmd);
